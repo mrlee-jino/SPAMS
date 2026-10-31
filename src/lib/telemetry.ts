@@ -20,9 +20,9 @@ export interface TelemetryPacket {
     boot_id: string;
     sequence: number;
     sampled_at: string;
-    battery_percent: number;
-    voltage: number;
-    charging: boolean;
+    battery_percent: number | null;
+    voltage: number | null;
+    charging: boolean | null;
     solar_watts: number | null;
     solar_voltage: number | null;
     pump_state: "on" | "off" | "unknown";
@@ -85,14 +85,14 @@ export function parseTelemetry(
     throw new Error("At most six nodes are supported");
   const gateway = {
     ...identity(g, now),
-    battery_percent: numeric(g.battery_percent, 0, 100)!,
-    voltage: numeric(g.voltage, 0, 100)!,
-    charging: g.charging as boolean,
+    battery_percent: numeric(g.battery_percent, 0, 100, true),
+    voltage: numeric(g.voltage, 0, 100, true),
+    charging: g.charging as boolean | null,
     solar_watts: numeric(g.solar_watts, 0, 10000, true),
     solar_voltage: numeric(g.solar_voltage, 0, 100, true),
     pump_state: choice(g.pump_state, ["on", "off", "unknown"] as const),
   };
-  if (typeof g.charging !== "boolean")
+  if (g.charging !== null && typeof g.charging !== "boolean")
     throw new Error("Invalid charging state");
   const seen = new Set<string>();
   const nodes = packet.nodes.map((input): NodeReading => {

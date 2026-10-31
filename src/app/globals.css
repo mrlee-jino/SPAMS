@@ -1882,3 +1882,43 @@ select:focus {
     padding: 12px;
   }
 }
+.export-controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: end;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--panel);
+}
+.export-controls label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.export-controls input {
+  background: #0d1927;
+  border: 1px solid #34475b;
+  border-radius: 6px;
+  color: var(--text);
+  padding: 8px;
+  max-width: 100%;
+}
+.export-controls p {
+  flex-basis: 100%;
+  font-size: 10px;
+}
+.export-controls button {
+  font-size: 11px;
+}
+@media (max-width: 650px) {
+  .export-controls label {
+    width: 100%;
+  }
+  .export-controls input {
+    width: 100%;
+  }
+}

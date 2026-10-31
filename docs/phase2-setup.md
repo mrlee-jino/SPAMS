@@ -1,4 +1,6 @@
-# Phase 2: Supabase backend and authenticated workspace
+# Historical Phase 2: Supabase backend and authenticated workspace
+
+**Superseded:** visitor authentication has been removed. Use [public monitoring setup](public-monitoring.md); do not create Auth accounts or enable pump control for the current website. The notes below document the earlier design.
 
 ## What is implemented
 

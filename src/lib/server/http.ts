@@ -1,6 +1,6 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { serverSupabase } from "@/lib/supabase/server";
+import { publicSupabase } from "@/lib/supabase/public";
 import { publicSupabaseConfig } from "@/lib/supabase/config";
 export function json(body: unknown, status = 200) {
   return NextResponse.json(body, {
@@ -8,17 +8,10 @@ export function json(body: unknown, status = 200) {
     headers: { "Cache-Control": "private, no-store" },
   });
 }
-export async function userClient() {
+export function publicClient() {
   if (!publicSupabaseConfig())
     return { error: json({ error: "Supabase is not configured." }, 503) };
-  const client = await serverSupabase();
-  const {
-    data: { user },
-    error,
-  } = await client.auth.getUser();
-  if (error || !user)
-    return { error: json({ error: "Sign in required." }, 401) };
-  return { client, user };
+  return { client: publicSupabase() };
 }
 export { sameOrigin } from "@/lib/request-security";
 export async function readBody(

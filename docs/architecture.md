@@ -1,3 +1,7 @@
+# Current implementation
+
+Visitor authentication has been removed. Public SELECT policies, private device ingestion, labeled simulation records, disabled remote pump controls, exports and research processing are described in [public monitoring setup](public-monitoring.md). The original design notes below preserve context and are not the current activation procedure.
+
 # Architecture and implementation boundary
 
 ## Original Phase 1 frontend

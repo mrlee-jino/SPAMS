@@ -1,7 +1,7 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import { publicSupabaseConfig } from "./config";
-/** Only device routes use this client. Dashboard requests always use user RLS. */
+/** Only device routes and the authorized research worker use this client. Public dashboards use anonymous RLS. */
 export function deviceSupabase() {
   const config = publicSupabaseConfig();
   const key = process.env.SUPABASE_SECRET_KEY;

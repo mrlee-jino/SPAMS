@@ -125,7 +125,7 @@ export function Workspace({
   return (
     <div className="app-shell">
       <aside className={`sidebar ${mobile ? "open" : ""}`}>
-        <Link href="/" className="brand">
+        <Link href="/demo" className="brand">
           <div className="brand-icon">
             <Waves size={26} />
           </div>
@@ -157,7 +157,7 @@ export function Workspace({
             return (
               <Link
                 key={key}
-                href={key === "dashboard" ? "/" : `/${key}`}
+                href={key === "dashboard" ? "/demo" : `/${key}`}
                 aria-current={
                   section === key ||
                   (key === "nodes" && section === "node-detail")
@@ -194,9 +194,9 @@ export function Workspace({
             <span>RESEARCH PROTOTYPE</span>
           </div>
           <div className="profile">
-            <span>RA</span>
+            <span>PV</span>
             <div>
-              Research administrator<small>Simulation workspace</small>
+              Public research viewer<small>Simulation workspace</small>
             </div>
             <ShieldCheck size={15} />
           </div>
@@ -224,8 +224,8 @@ export function Workspace({
             <strong>{title}</strong>
           </div>
           <div className="top-actions">
-            <Link href="/login" className="text-link">
-              Administrator sign in
+            <Link href="/" className="text-link">
+              Public monitoring
             </Link>
             <span className="demo-top">
               <span /> Simulation mode

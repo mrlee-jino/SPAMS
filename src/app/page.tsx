@@ -1,4 +1,1 @@
-import { Workspace } from "@/components/workspace";
-export default function Page() {
-  return <Workspace section="dashboard" />;
-}
+export { default, dynamic } from "./live/page";

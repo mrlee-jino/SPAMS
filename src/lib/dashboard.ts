@@ -2,7 +2,9 @@ export interface Pond {
   id: string;
   name: string;
 }
+export type DataSource = "hardware" | "simulation";
 export interface Gateway {
+  data_source: DataSource;
   id: string;
   pond_id: string;
   name: string;
@@ -27,6 +29,7 @@ export interface DeviceNode {
   ultrasonic_enabled: boolean;
 }
 export interface Observation {
+  source: DataSource;
   id: string;
   node_id: string;
   sampled_at: string;
@@ -76,6 +79,13 @@ export interface PondAlert {
   resolved_at: string | null;
 }
 export interface StoredForecast {
+  evaluation?: {
+    samples: number;
+    model: { mae: number; rmse: number } | null;
+    persistence: { mae: number; rmse: number } | null;
+    scope: string;
+  };
+  source: DataSource;
   id: string;
   target_at: string;
   generated_at: string;
@@ -151,7 +161,7 @@ export function hourlyMeans(observations: readonly Observation[]) {
       level: mean(
         [...ns.values()].filter((v) => v.l.length).map((v) => mean(v.l)!),
       ),
-      coverage: ns.size,
+      coverage: [...ns.values()].filter((v) => v.t.length > 0).length,
     }));
 }
 /** Preserve empty UTC hours as nulls so charts do not interpolate missing observations. */

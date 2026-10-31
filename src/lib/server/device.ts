@@ -27,5 +27,23 @@ export async function authenticateDevice(request: Request) {
     };
   if (!data)
     return { error: json({ error: "Invalid device credentials." }, 401) };
-  return { client, gatewayId: data.gateway_id as string };
+  const gateway = await client
+    .from("gateways")
+    .select("data_source")
+    .eq("id", data.gateway_id)
+    .single();
+  if (gateway.error)
+    return { error: json({ error: "Gateway unavailable." }, 503) };
+  if (
+    request.headers.get("x-spams-simulator") === "true" &&
+    gateway.data.data_source !== "simulation"
+  )
+    return {
+      error: json({ error: "Simulator must use a simulation gateway." }, 403),
+    };
+  return {
+    client,
+    gatewayId: data.gateway_id as string,
+    source: gateway.data.data_source as "hardware" | "simulation",
+  };
 }

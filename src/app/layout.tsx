@@ -3,7 +3,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "SPAMS-S · Pond intelligence",
   description:
-    "Six-node aquaculture monitoring research platform. Phase 1 simulation.",
+    "Public aquaculture monitoring research platform with labeled simulation and hardware telemetry.",
 };
 export default function RootLayout({
   children,

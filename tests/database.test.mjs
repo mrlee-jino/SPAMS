@@ -9,7 +9,7 @@ const pondA = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
 const gateway = "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
   otherGateway = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 const boot = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
-async function setup() {
+async function setup(publicAccess = false) {
   const db = new PGlite();
   await db.exec(
     `create role anon;create role authenticated;create role service_role bypassrls;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;grant usage on schema auth to authenticated,service_role;grant execute on function auth.uid() to authenticated,service_role;`,
@@ -24,6 +24,17 @@ async function setup() {
         "utf8",
       ),
     );
+  if (publicAccess)
+    for (const file of [
+      "202610310003_public_monitoring.sql",
+      "202610310004_research_jobs.sql",
+    ])
+      await db.exec(
+        await readFile(
+          new URL("../supabase/migrations/" + file, import.meta.url),
+          "utf8",
+        ),
+      );
   await db.exec(
     `insert into auth.users values('${A}'),('${B}');insert into ponds(id,name) values('${pondA}','A'),('${pondB}','B');insert into pond_admins values('${pondA}','${A}'),('${pondB}','${B}');insert into gateways(id,pond_id,name) values('${gateway}','${pondA}','Gateway A'),('${otherGateway}','${pondB}','Gateway B');`,
   );
@@ -325,6 +336,156 @@ test("delivery rechecks water safety, expires pending commands and prevents cros
         )
       ).rows[0].n,
       1,
+    );
+  } finally {
+    await db.close();
+  }
+});
+test("public monitoring exposes public measurements only; identities, credentials, writes and controls stay denied", async () => {
+  const db = await setup(true);
+  try {
+    await sixNodes(db);
+    await db.query("select ingest_telemetry($1,$2)", [
+      gateway,
+      JSON.stringify(await packet(db)),
+    ]);
+    await db.exec(
+      `update ponds set is_public=false where id='${pondB}';set role anon;`,
+    );
+    assert.deepEqual((await db.query("select name from ponds")).rows, [
+      { name: "A" },
+    ]);
+    assert.equal(
+      (await db.query("select * from node_telemetry")).rows.length,
+      6,
+    );
+    for (const table of [
+      "pond_admins",
+      "device_credentials",
+      "pump_commands",
+      "command_events",
+    ])
+      await assert.rejects(
+        db.query("select * from " + table),
+        /permission denied/,
+      );
+    await assert.rejects(
+      db.exec("update gateways set control_enabled=true"),
+      /permission denied/,
+    );
+    await assert.rejects(
+      db.query("select request_pump_command($1,$2,$3)", [
+        gateway,
+        "start",
+        crypto.randomUUID(),
+      ]),
+      /permission denied/,
+    );
+    await assert.rejects(
+      db.query("select publish_research($1,$2,$3,$4)", [
+        pondA,
+        "hardware",
+        null,
+        "[]",
+      ]),
+      /permission denied/,
+    );
+    await db.exec("reset role");
+    await asUser(db, A, () =>
+      assert.rejects(
+        db.query("select request_pump_command($1,$2,$3)", [
+          gateway,
+          "start",
+          crypto.randomUUID(),
+        ]),
+        /permission denied/,
+      ),
+    );
+  } finally {
+    await db.close();
+  }
+});
+test("simulation source is imposed by the registry and uninstrumented power can be null", async () => {
+  const db = await setup(true);
+  try {
+    await sixNodes(db);
+    await db.exec(
+      `update gateways set data_source='simulation' where id='${gateway}'`,
+    );
+    const p = await packet(db);
+    p.gateway.battery_percent = null;
+    p.gateway.voltage = null;
+    p.gateway.charging = null;
+    await db.query("select ingest_telemetry($1,$2)", [
+      gateway,
+      JSON.stringify(p),
+    ]);
+    assert(
+      (await db.query("select source from node_telemetry")).rows.every(
+        (r) => r.source === "simulation",
+      ),
+    );
+    assert.equal(
+      (await db.query("select source from gateway_telemetry")).rows[0].source,
+      "simulation",
+    );
+  } finally {
+    await db.close();
+  }
+});
+test("research publication is idempotent, preserves resolved alerts and isolates sources", async () => {
+  const db = await setup(true);
+  try {
+    const forecast = {
+      target_at: "2026-11-01T10:00:00Z",
+      predicted_temperature_c: 28.5,
+      model_version: "test",
+      training_start: "2026-11-01T03:00:00Z",
+      training_end: "2026-11-01T09:00:00Z",
+      valid_nodes: 4,
+      evaluation: { samples: 0 },
+    };
+    const alerts = [
+      {
+        rule_key: "node:test:heartbeat",
+        title: "No sample",
+        severity: "warning",
+      },
+    ];
+    const publish = (source, items) =>
+      db.query("select publish_research($1,$2,$3,$4)", [
+        pondA,
+        source,
+        JSON.stringify(forecast),
+        JSON.stringify(items),
+      ]);
+    await publish("hardware", alerts);
+    await publish("hardware", alerts);
+    assert.equal((await db.query("select * from forecasts")).rows.length, 1);
+    assert.equal((await db.query("select * from alerts")).rows.length, 1);
+    await publish("simulation", alerts);
+    await publish("hardware", []);
+    assert.equal(
+      (
+        await db.query(
+          "select * from alerts where source='simulation' and resolved_at is null",
+        )
+      ).rows.length,
+      1,
+    );
+    assert.equal(
+      (
+        await db.query(
+          "select * from alerts where source='hardware' and resolved_at is not null",
+        )
+      ).rows.length,
+      1,
+    );
+    await publish("hardware", alerts);
+    assert.equal(
+      (await db.query("select * from alerts where source='hardware'")).rows
+        .length,
+      2,
     );
   } finally {
     await db.close();

@@ -22,5 +22,8 @@ export async function POST(request: Request) {
       },
       422,
     );
-  return json({ accepted: true, ...data }, data?.duplicate ? 200 : 201);
+  return json(
+    { accepted: true, source: auth.source, ...data },
+    data?.duplicate ? 200 : 201,
+  );
 }
