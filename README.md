@@ -2,9 +2,13 @@
 
 Smart Pond Aquaculture Monitoring System-Swarm: a six-node stationary aquaculture research platform.
 
-## Phase 1
+## Current status
 
-A responsive dark-mode frontend with **explicitly simulated data**. There is no hardware connection, authentication, Supabase client, telemetry ingestion, persistent storage, or real pump endpoint. The administrator avatar is a presentation placeholder. Do not deploy this preview as a production control system.
+Phase 2 backend and the separate authenticated `/live` workspace are implemented. The public dashboard remains a simulation. Follow [Phase 2 activation instructions](docs/phase2-setup.md) to apply migrations, provision an administrator and configure Supabase/Vercel. Hosted activation is separate from local code validation.
+
+## Phase 1 preview
+
+The public preview is a responsive dark-mode frontend with **explicitly simulated data**. Its readings, administrator avatar and pump acknowledgments remain presentation-only. Real authentication, database access and durable commands live separately in `/login`, `/live` and the APIs described in the Phase 2 guide. No physical hardware is connected.
 
 ### Run
 
@@ -45,17 +49,19 @@ Current temperature aggregates include only four fresh online nodes. Node 05 sho
 ```text
 src/app/                 App Router routes, shared layout, loading/error/404 boundaries
 src/components/          Workspace shell, shared UI and reusable domain panels
-src/lib/                Strongly typed fixtures and deterministic regression calculation
-tests/                  Regression model tests using the built-in Node test runner
-docs/architecture.md     System boundaries and proposed next-phase backend design
+src/lib/                 Typed models, aggregation, validation, Supabase and server helpers
+src/proxy.ts             Supabase session refresh
+supabase/                Migrations and administrator workspace provisioning
+tests/                   PostgreSQL/RLS, command, telemetry, CSRF and regression tests
+docs/phase2-setup.md      Browser-only Supabase/Vercel activation guide
 ```
 
-Dependencies are locked in `package-lock.json`: Next.js 16.4.3, React 19.3.1, Tailwind 4.3.3, Recharts 3.10.1, Lucide React 1.66.0, TypeScript 5.9.3. No Supabase dependency is required until its integration is implemented.
+Dependencies are locked in `package-lock.json`: Next.js 16.4.3, React 19.3.1, Tailwind 4.3.3, Recharts 3.10.1, Lucide React 1.66.0, TypeScript 5.9.3. Phase 2 adds `@supabase/ssr`, `@supabase/supabase-js`, `server-only`, and a development-only PGlite PostgreSQL test engine.
 
 ### Validation
 
-Lint, TypeScript, four regression tests and an optimized production build are required checks. Browser smoke validation covers every implemented route at desktop and mobile sizes, chart range selection, sample export, notifications, mobile navigation, simulated pump cancel/start/stop/reset, and invalid-node 404 behavior. Loading and error boundaries are implemented; forced runtime error recovery has not been automated.
+Lint, TypeScript, 15 tests (including four regression tests) and an optimized production build are required checks. Browser smoke validation covers every implemented route at desktop and mobile sizes, chart range selection, sample export, notifications, mobile navigation, simulated pump cancel/start/stop/reset, and invalid-node 404 behavior. Loading and error boundaries are implemented; forced runtime error recovery has not been automated.
 
-### Next, after Phase 1 review
+### Backend activation and next steps
 
-Review the layout, terminology, simulated states and research scope. Then implement Supabase schema/migrations, administrator Auth/RLS and server-only data access, followed by Realtime and durable commands. See [architecture](docs/architecture.md). Hardware integration and Phase 2 are intentionally pending review. Vercel deployment has not been performed.
+Apply the Phase 2 migrations and provision a Supabase administrator using [the setup guide](docs/phase2-setup.md). Physical hardware integration, production forecast scheduling and automated alert rules remain future work. Vercel deployment has not been performed by this agent.

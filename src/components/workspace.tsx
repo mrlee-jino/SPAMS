@@ -224,6 +224,9 @@ export function Workspace({
             <strong>{title}</strong>
           </div>
           <div className="top-actions">
+            <Link href="/login" className="text-link">
+              Administrator sign in
+            </Link>
             <span className="demo-top">
               <span /> Simulation mode
             </span>

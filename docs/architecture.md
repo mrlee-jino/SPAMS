@@ -1,6 +1,6 @@
 # Architecture and implementation boundary
 
-## Current frontend
+## Original Phase 1 frontend
 
 Next.js App Router renders route entry points and validates node IDs. Client components own navigation overlays, chart range selection, CSV download and local command simulation. Shared panels consume typed fixtures in `src/lib/simulation.ts`. Tailwind v4 is initialized through PostCSS; shared theme and responsive component styles live in `src/app/globals.css`. No remote fonts or image services are required.
 
@@ -23,7 +23,7 @@ Gateway authenticated poll/receive --> execute with interlocks --> device ACK
 
 The diagram describes the target architecture, not a connection implemented in Phase 1.
 
-## Proposed PostgreSQL model (not implemented)
+## PostgreSQL model design
 
 | Table | Ownership / relationships | Important constraints and indexes |
 | --- | --- | --- |
@@ -64,4 +64,4 @@ Phase 1 uses ordinary least squares on six synthetic hourly mean temperatures, p
 5. Add firmware integration and validate physical safeguards before enabling any relay control.
 6. Configure Vercel environment variables and Supabase redirect URLs; use preview deployments before production.
 
-No Phase 2 migrations, Auth flows, APIs, device credentials or cloud deployment have been created.
+Phase 2 migrations, Auth flows, user/device API boundaries and an authenticated workspace are now implemented. See [Phase 2 setup and actual implementation boundaries](phase2-setup.md). Hosted migration application, device provisioning, physical hardware integration and cloud deployment require separate activation.
