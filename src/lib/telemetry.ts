@@ -4,17 +4,28 @@ export interface AcousticReading {
   valid_returns: number;
   quality: "usable" | "noisy" | "invalid";
 }
+
 export interface NodeReading {
   node_id: string;
   boot_id: string;
   sequence: number;
   sampled_at: string;
+
   temperature_c: number | null;
   water_level_m: number | null;
   battery_percent: number | null;
+
+  // Additional SPAMS water-quality sensors
+  ph_value: number | null;
+  tds_ppm: number | null;
+  turbidity_voltage: number | null;
+  turbidity_ntu: number | null;
+  water_level_raw: number | null;
+
   sensor_health: "healthy" | "degraded" | "failed";
   acoustic?: AcousticReading;
 }
+
 export interface TelemetryPacket {
   gateway: {
     boot_id: string;
@@ -100,29 +111,58 @@ export function parseTelemetry(
     if (!isUuid(n.node_id) || seen.has(n.node_id))
       throw new Error("Invalid or duplicate node");
     seen.add(n.node_id);
-    const result: NodeReading = {
-      ...identity(n, now),
-      node_id: n.node_id,
-      temperature_c: numeric(n.temperature_c, -10, 60, true),
-      water_level_m: numeric(n.water_level_m, 0, 20, true),
-      battery_percent: numeric(n.battery_percent, 0, 100, true),
-      sensor_health: choice(n.sensor_health, [
-        "healthy",
-        "degraded",
-        "failed",
-      ] as const),
-    };
-    if (n.acoustic !== undefined) {
-      const a = record(n.acoustic);
-      const valid = numeric(a.valid_returns, 0, 100)!;
-      if (!Number.isInteger(valid)) throw new Error("Invalid return count");
-      result.acoustic = {
-        echo_us: numeric(a.echo_us, 0, 1000000)!,
-        amplitude: numeric(a.amplitude, 0, 1)!,
-        valid_returns: valid,
-        quality: choice(a.quality, ["usable", "noisy", "invalid"] as const),
-      };
-    }
+    
+  const result: NodeReading = {
+    ...identity(n, now),
+
+    node_id: n.node_id,
+
+    temperature_c: numeric(
+      n.temperature_c, -10, 60, true
+    ),
+
+    water_level_m: numeric(
+      n.water_level_m, 0, 20, true
+    ),
+
+    battery_percent: numeric(
+      n.battery_percent, 0, 100, true
+    ),
+
+    ph_value: numeric(
+      n.ph_value ?? null, 0, 14, true
+    ),
+
+    tds_ppm: numeric(
+      n.tds_ppm ?? null, 0, 100000, true
+    ),
+
+    turbidity_voltage: numeric(
+      n.turbidity_voltage ?? null, 0, 6, true
+    ),
+
+    turbidity_ntu: numeric(
+      n.turbidity_ntu ?? null, 0, 100000, true
+    ),
+
+    water_level_raw: numeric(
+      n.water_level_raw ?? null, 0, 4095, true
+    ),
+
+    sensor_health: choice(n.sensor_health, [
+      "healthy",
+      "degraded",
+      "failed",
+    ] as const),
+  };
+
+  if (
+    result.water_level_raw !== null &&
+    !Number.isInteger(result.water_level_raw)
+  ) {
+    throw new Error("Invalid water level ADC value");
+  }
+
     return result;
   });
   return { gateway, nodes };
