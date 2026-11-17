@@ -2,7 +2,7 @@
 -- To create an isolated software test pond, change source below to 'simulation'.
 begin;
 do $$
-declare pond uuid:=gen_random_uuid(); gateway uuid:=gen_random_uuid(); source text:='hardware';
+declare pond uuid:=gen_random_uuid(); gateway uuid:=gen_random_uuid(); source text:='simulation';
 begin
  insert into public.ponds(id,name,is_public) values(pond,case when source='simulation' then 'Software test pond (simulated)' else 'Research pond A' end,true);
  insert into public.gateways(id,pond_id,name,data_source) values(gateway,pond,'Central gateway 01',source);
