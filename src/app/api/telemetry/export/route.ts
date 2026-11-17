@@ -18,13 +18,13 @@ export async function POST(request: Request) {
   try {
     packet = parseTelemetry(await readBody(request));
   } catch (error) {
-  console.error("[SPAMS TELEMETRY VALIDATION]", error);
-
-  return json(
-    { error: "Invalid telemetry payload." },
-    400
+  console.error(
+    "[SPAMS TELEMETRY VALIDATION ERROR]:",
+    error instanceof Error ? error.message : error
   );
-  }
+
+  return json({ error: "Invalid telemetry payload." }, 400);
+}
 
   // 3. Send validated data to Supabase
   const { data, error } = await auth.client.rpc(
