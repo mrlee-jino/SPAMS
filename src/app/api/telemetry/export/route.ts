@@ -17,11 +17,13 @@ export async function POST(request: Request) {
 
   try {
     packet = parseTelemetry(await readBody(request));
-  } catch {
-    return json(
-      { error: "Invalid telemetry payload." },
-      400
-    );
+  } catch (error) {
+  console.error("[SPAMS TELEMETRY VALIDATION]", error);
+
+  return json(
+    { error: "Invalid telemetry payload." },
+    400
+  );
   }
 
   // 3. Send validated data to Supabase
