@@ -116,6 +116,13 @@ export interface DashboardSnapshot {
   forecast: StoredForecast | null;
   fetchedAt: string;
 }
+export const FULL_WATER_LEVEL_RAW = 1500;
+export function waterLevelPercentFromRaw(
+  raw: number | null | undefined,
+): number | null {
+  if (raw === null || raw === undefined || !Number.isFinite(raw)) return null;
+  return Math.min(100, Math.max(0, Math.round((raw / FULL_WATER_LEVEL_RAW) * 100)));
+}
 export function freshness(
   timestamp: string | null,
   now: number,

@@ -11,7 +11,13 @@ import {
   Battery,
 } from "lucide-react";
 import { browserSupabase } from "@/lib/supabase/browser";
-import { ageLabel, freshness, type DashboardSnapshot } from "@/lib/dashboard";
+import {
+  ageLabel,
+  freshness,
+  FULL_WATER_LEVEL_RAW,
+  waterLevelPercentFromRaw,
+  type DashboardSnapshot,
+} from "@/lib/dashboard";
 import { Badge, Panel } from "./ui";
 import { LiveChart } from "./live-chart";
 import { NodeHistory } from "./node-history";
@@ -347,10 +353,9 @@ export function LiveWorkspace() {
                   {snapshot.nodes.map((n) => {
                     const reading = readings.find((t) => t.node_id === n.id);
                     const status = freshness(reading?.sampled_at ?? null, now);
-                    const hasCalibratedLevel = reading?.water_level_m != null;
-                    const levelValue = hasCalibratedLevel
-                      ? reading.water_level_m
-                      : (reading?.water_level_raw ?? null);
+                    const levelPercent = waterLevelPercentFromRaw(
+                      reading?.water_level_raw,
+                    );
                     return (
                       <button
                         className="node-card live-node"
@@ -387,17 +392,34 @@ export function LiveWorkspace() {
                             </strong>
                           </div>
                           <div>
-                            <span>
-                              {hasCalibratedLevel
-                                ? "Water level"
-                                : "Water level raw"}
+                            <span className="pond-level-label">
+                              <Droplets size={13} /> Pond level
                             </span>
                             <strong>
-                              {levelValue ?? "—"}
-                              <small>
-                                {hasCalibratedLevel ? " m" : " counts"}
-                              </small>
+                              {levelPercent ?? "—"}
+                              <small>{levelPercent === null ? "" : "%"}</small>
                             </strong>
+                            <div
+                              className={`pond-level-gauge${levelPercent === null ? " unavailable" : ""}`}
+                              role="img"
+                              aria-label={
+                                levelPercent === null
+                                  ? "Pond level unavailable; no raw sensor reading"
+                                  : `Estimated pond fullness ${levelPercent} percent; full reference is 1500 ADC counts`
+                              }
+                              title="Estimated from raw ADC; 1500 counts represents full"
+                            >
+                              <span
+                                style={{
+                                  width: `${levelPercent ?? 0}%`,
+                                }}
+                              />
+                            </div>
+                            <small className="pond-level-raw">
+                              {reading?.water_level_raw == null
+                                ? "No raw reading"
+                                : `${reading.water_level_raw} / ${FULL_WATER_LEVEL_RAW} ADC`}
+                            </small>
                           </div>
                         </div>
                         <div className="node-footer">

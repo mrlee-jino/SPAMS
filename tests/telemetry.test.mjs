@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { parseTelemetry } from "../src/lib/telemetry.ts";
-import { freshness, hourlyMeans } from "../src/lib/dashboard.ts";
+import {
+  freshness,
+  hourlyMeans,
+  waterLevelPercentFromRaw,
+} from "../src/lib/dashboard.ts";
 const now = Date.parse("2026-10-31T10:00:00Z");
 const id = "11111111-1111-4111-8111-111111111111";
 function packet() {
@@ -79,6 +83,13 @@ test("freshness distinguishes missing, fresh, stale and offline observations", (
     freshness(new Date(now - 16 * 60000).toISOString(), now),
     "offline",
   );
+});
+test("water-level raw counts map to bounded fullness percentages", () => {
+  assert.equal(waterLevelPercentFromRaw(null), null);
+  assert.equal(waterLevelPercentFromRaw(0), 0);
+  assert.equal(waterLevelPercentFromRaw(750), 50);
+  assert.equal(waterLevelPercentFromRaw(1500), 100);
+  assert.equal(waterLevelPercentFromRaw(1800), 100);
 });
 test("hourly means weight nodes equally and exclude failed readings", () => {
   const readings = [

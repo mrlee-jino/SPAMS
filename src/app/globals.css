@@ -1833,6 +1833,33 @@ select:focus {
 .live-shell .node-readings strong {
   font-size: 23px;
 }
+.pond-level-label {
+  color: #8bcddd !important;
+}
+.pond-level-gauge {
+  height: 7px;
+  margin: 8px 0 5px;
+  overflow: hidden;
+  border: 1px solid #2d5264;
+  border-radius: 6px;
+  background: #112433;
+}
+.pond-level-gauge > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #258db4, #56d3cf);
+  transition: width 250ms ease;
+}
+.pond-level-gauge.unavailable {
+  border-style: dashed;
+  opacity: 0.55;
+}
+.pond-level-raw {
+  color: #8196a8 !important;
+  font-size: 8px !important;
+  font-weight: 400 !important;
+}
 .live-shell .confirmation button {
   margin: 5px 8px 5px 0;
 }
