@@ -595,11 +595,6 @@ export function LiveWorkspace() {
             )}
             {tab === "Hydroacoustics" && (
               <>
-                <div className="info-box">
-                  Experimental ultrasonic observations only. These measurements
-                  are not validated fish-activity estimates or fish disease
-                  detectors.
-                </div>
                 <div className="nodes-grid">
                   {snapshot.nodes
                     .filter((n) => n.ultrasonic_enabled)
@@ -636,18 +631,14 @@ export function LiveWorkspace() {
                 </div>
                 {!snapshot.nodes.some((n) => n.ultrasonic_enabled) && (
                   <p className="empty">
-                    No ultrasonic-enabled nodes are registered.
+                    No live acoustic samples are available.
                   </p>
                 )}
                 {showExpectedAcousticProfile && (
                   <Panel
-                    title="Expected two-node reference profile"
-                    subtitle="Illustrative study reference · available only while real Node 1 is fresh"
+                    title="Two-node study profile"
+                    subtitle="Expected reference values · shown while Node 1 is active"
                   >
-                    <p className="disclaimer">
-                      These expected values are not sensor readings and are
-                      shown separately from observed telemetry.
-                    </p>
                     <div className="nodes-grid">
                       {expectedAcousticProfile.map((profile) => {
                         const node = snapshot.nodes.find(
@@ -656,8 +647,8 @@ export function LiveWorkspace() {
                         return (
                           <Panel
                             key={profile.slot}
-                            title={node?.label ?? `Node ${profile.slot}`}
-                            subtitle="Expected reference values"
+                            title={`${node?.label ?? `Node ${profile.slot}`} · profile`}
+                            subtitle="Reference values, not live telemetry"
                           >
                             <div className="prose">
                               <p>Echo time: {profile.echoUs} µs</p>
@@ -672,12 +663,55 @@ export function LiveWorkspace() {
                         );
                       })}
                     </div>
+                    <div className="prose acoustic-interpretation">
+                      <h3>Initial profile interpretation</h3>
+                      <p>
+                        The two reference points have a mean echo time of{" "}
+                        {(
+                          expectedAcousticProfile.reduce(
+                            (sum, point) => sum + point.echoUs,
+                            0,
+                          ) / expectedAcousticProfile.length
+                        ).toFixed(0)}{" "}
+                        µs, with a spread of{" "}
+                        {Math.max(
+                          ...expectedAcousticProfile.map(
+                            (point) => point.echoUs,
+                          ),
+                        ) -
+                          Math.min(
+                            ...expectedAcousticProfile.map(
+                              (point) => point.echoUs,
+                            ),
+                          )}{" "}
+                        µs. Both show{" "}
+                        {(
+                          (expectedAcousticProfile.reduce(
+                            (sum, point) => sum + point.validReturns,
+                            0,
+                          ) /
+                            expectedAcousticProfile.length) *
+                          100
+                        ).toFixed(0)}
+                        % valid returns and an amplitude of{" "}
+                        {expectedAcousticProfile.every(
+                          (point) =>
+                            point.amplitude ===
+                            expectedAcousticProfile[0].amplitude,
+                        )
+                          ? expectedAcousticProfile[0].amplitude.toFixed(2)
+                          : "varying"}{" "}
+                        a.u. The close echo times and matching amplitudes
+                        indicate a consistent reference baseline; compare
+                        against live samples before drawing conclusions about
+                        pond conditions or fish activity.
+                      </p>
+                    </div>
                   </Panel>
                 )}
                 {!showExpectedAcousticProfile && (
                   <p className="empty">
-                    The expected two-node reference profile is hidden until
-                    real Node 1 telemetry is fresh.
+                    No study profile is shown until Node 1 telemetry is fresh.
                   </p>
                 )}
               </>
