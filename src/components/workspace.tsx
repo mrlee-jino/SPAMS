@@ -572,17 +572,21 @@ export function Workspace({
               </div>
               <Panel
                 title="Monitoring-node batteries"
-                subtitle="Simulated percentages · offline values may be outdated"
+                subtitle="100% when active · 0% when inactive"
               >
                 <div className="coverage-grid">
                   {nodes.map((n) => (
                     <div key={n.id}>
                       <strong>{n.name}</strong>
-                      <span className={n.battery < 25 ? "amber" : "teal"}>
-                        {n.battery}%
+                      <span className={n.status === "online" ? "teal" : "amber"}>
+                        {n.status === "online" ? 100 : 0}%
                       </span>
                       <div className="progress">
-                        <span style={{ width: `${n.battery}%` }} />
+                        <span
+                          style={{
+                            width: `${n.status === "online" ? 100 : 0}%`,
+                          }}
+                        />
                       </div>
                       <p>
                         {n.status === "online"

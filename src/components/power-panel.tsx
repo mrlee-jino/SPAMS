@@ -13,12 +13,7 @@ export function PowerPanel() {
     <Panel
       title="Gateway power"
       subtitle="Central ESP32 · simulated readings"
-      action={
-        <>
-          <span className="simulation-power-badge">SIMULATED</span>
-          <Sun className="amber" size={19} />
-        </>
-      }
+      action={<Sun className="amber" size={19} />}
     >
       <div className="power-summary">
         <div className="battery-visual">

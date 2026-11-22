@@ -616,7 +616,6 @@ export function LiveWorkspace() {
                 <Panel
                   title="Gateway power"
                   subtitle="Central gateway · sample simulation"
-                  action={<Badge tone="amber">SIMULATED</Badge>}
                 >
                   <div className="power-grid">
                     {[
@@ -648,16 +647,14 @@ export function LiveWorkspace() {
                   <div className="coverage-grid">
                     {snapshot.nodes.map((n) => {
                       const r = readings.find((t) => t.node_id === n.id);
+                      const batteryPercent =
+                        freshness(r?.sampled_at ?? null, now) === "online"
+                          ? 100
+                          : 0;
                       return (
                         <div key={n.id}>
                           <strong>{n.label}</strong>
-                          <span>
-                            {r?.battery_percent ?? "Unavailable"}
-                            {r?.battery_percent !== null &&
-                            r?.battery_percent !== undefined
-                              ? "%"
-                              : ""}
-                          </span>
+                          <span>{batteryPercent}%</span>
                           <p>{ageLabel(r?.sampled_at ?? null, now)}</p>
                         </div>
                       );
