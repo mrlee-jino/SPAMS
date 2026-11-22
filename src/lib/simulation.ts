@@ -103,7 +103,6 @@ export const navigation = [
   ["analytics", "Analytics"],
   ["predictions", "Predictions"],
   ["hydroacoustics", "Hydroacoustics"],
-  ["pump-control", "Pump control"],
   ["power-monitoring", "Power monitoring"],
   ["alerts", "Alerts"],
   ["settings", "Settings"],

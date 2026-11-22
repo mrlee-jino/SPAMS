@@ -30,7 +30,6 @@ import { NodeCard } from "./node-card";
 import { HistoryChart } from "./history-chart";
 import { Forecast } from "./forecast-panel";
 import { PowerPanel } from "./power-panel";
-import { PumpPanel } from "./pump-panel";
 import { AlertsPanel } from "./alerts-panel";
 import { PondMap } from "./pond-map";
 const icons = [
@@ -39,7 +38,6 @@ const icons = [
   ChartNoAxesCombined,
   ArrowUpRight,
   Waves,
-  Droplets,
   Zap,
   Bell,
   Settings,
@@ -319,9 +317,9 @@ export function Workspace({
                 />
                 <Metric
                   label="Gateway battery"
-                  value="84"
+                  value="95"
                   unit="%"
-                  detail="Solar charging · 12.8 V"
+                  detail="Simulated · 3.8 V"
                   icon={Battery}
                   color="green"
                 />
@@ -354,7 +352,6 @@ export function Workspace({
               </div>
               <div className="bottom-grid">
                 <PowerPanel />
-                <PumpPanel />
                 <AlertsPanel />
               </div>
               <PondMap />
@@ -549,32 +546,6 @@ export function Workspace({
               </Panel>
             </>
           )}
-          {section === "pump-control" && (
-            <div className="main-grid equal">
-              <PumpPanel expanded />
-              <Panel title="Control safety" subtitle="Architecture preview">
-                <div className="prose">
-                  <ShieldCheck className="teal" size={30} />
-                  <h3>Simulation only</h3>
-                  <p>
-                    Commands are held in this browser session and reset when the
-                    page reloads. Acknowledgments are generated locally, not
-                    received from an ESP32.
-                  </p>
-                  <h3>Required production safeguards</h3>
-                  <p>
-                    Administrator authentication, server authorization, fresh
-                    gateway heartbeat, low-water and low-battery interlocks,
-                    command expiration, and physical manual override.
-                  </p>
-                  <p>
-                    Device-reported execution must remain distinct from
-                    requested state. No real control endpoint exists in Phase 1.
-                  </p>
-                </div>
-              </Panel>
-            </div>
-          )}
           {section === "power-monitoring" && (
             <>
               <div className="main-grid equal">
@@ -587,9 +558,9 @@ export function Workspace({
                     <Sun size={30} className="amber" />
                     <h3>Solar-powered central gateway</h3>
                     <p>
-                      Solar input charges the gateway battery. Gateway battery
-                      monitoring and pump relay control share the central
-                      controller.
+                      Simulated gateway battery is fixed at 95% and 3.8 V.
+                      Solar and panel voltage share a simulated value that
+                      changes every 10 seconds.
                     </p>
                     <h3>Six battery-powered monitoring nodes</h3>
                     <p>

@@ -1,12 +1,24 @@
 "use client";
-import { Battery, Sun, Zap } from "lucide-react";
+import { Battery, Sun } from "lucide-react";
 import { Panel } from "./ui";
+import {
+  SIMULATED_GATEWAY_BATTERY_PERCENT,
+  SIMULATED_GATEWAY_BATTERY_VOLTAGE,
+  useSimulatedPanelVoltage,
+} from "./use-simulated-power";
+
 export function PowerPanel() {
+  const panelVoltage = useSimulatedPanelVoltage();
   return (
     <Panel
       title="Gateway power"
-      subtitle="Central ESP32 · solar-powered"
-      action={<Sun className="amber" size={19} />}
+      subtitle="Central ESP32 · simulated readings"
+      action={
+        <>
+          <span className="simulation-power-badge">SIMULATED</span>
+          <Sun className="amber" size={19} />
+        </>
+      }
     >
       <div className="power-summary">
         <div className="battery-visual">
@@ -14,44 +26,42 @@ export function PowerPanel() {
         </div>
         <div>
           <strong>
-            84<span>%</span>
+            {SIMULATED_GATEWAY_BATTERY_PERCENT}
+            <span>%</span>
           </strong>
-          <p className="teal">
-            <Zap size={12} /> Charging · simulated
-          </p>
+          <p className="teal">Fixed demonstration value</p>
         </div>
       </div>
       <div className="progress">
-        <span style={{ width: "84%" }} />
+        <span style={{ width: `${SIMULATED_GATEWAY_BATTERY_PERCENT}%` }} />
       </div>
       <div className="power-grid">
         <div>
           <span>Battery voltage</span>
           <strong>
-            12.8 <small>V</small>
+            {SIMULATED_GATEWAY_BATTERY_VOLTAGE.toFixed(1)} <small>V</small>
           </strong>
         </div>
         <div>
           <span>Solar input</span>
           <strong>
-            18.4 <small>W</small>
+            {panelVoltage.toFixed(2)} <small>V</small>
           </strong>
         </div>
         <div>
           <span>Panel voltage</span>
           <strong>
-            17.6 <small>V</small>
+            {panelVoltage.toFixed(2)} <small>V</small>
           </strong>
         </div>
         <div>
-          <span>Charge current</span>
-          <strong>
-            1.4 <small>A</small>
-          </strong>
+          <span>Next voltage update</span>
+          <strong>10 <small>s interval</small></strong>
         </div>
       </div>
       <p className="disclaimer">
-        Sample power values. Solar fields may be unavailable on real hardware.
+        Demonstration values only, not measured hardware telemetry. Solar input
+        and panel voltage are the same randomized 3.20–6.00 V value.
       </p>
     </Panel>
   );

@@ -14,14 +14,19 @@ import { browserSupabase } from "@/lib/supabase/browser";
 import { ageLabel, freshness, type DashboardSnapshot } from "@/lib/dashboard";
 import { Badge, Panel } from "./ui";
 import { LiveChart } from "./live-chart";
+import { NodeHistory } from "./node-history";
 import { TelemetryExport } from "./telemetry-export";
+import {
+  SIMULATED_GATEWAY_BATTERY_PERCENT,
+  SIMULATED_GATEWAY_BATTERY_VOLTAGE,
+  useSimulatedPanelVoltage,
+} from "./use-simulated-power";
 const tabs = [
   "Overview",
   "Nodes",
   "Analytics",
   "Predictions",
   "Hydroacoustics",
-  "Pump control",
   "Power",
   "Alerts",
   "Settings",
@@ -29,6 +34,7 @@ const tabs = [
 type Tab = (typeof tabs)[number];
 export function LiveWorkspace() {
   const [tab, setTab] = useState<Tab>("Overview");
+  const panelVoltage = useSimulatedPanelVoltage();
   const [snapshot, setSnapshot] = useState<DashboardSnapshot | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(true);
@@ -333,6 +339,10 @@ export function LiveWorkspace() {
                   {snapshot.nodes.map((n) => {
                     const reading = readings.find((t) => t.node_id === n.id);
                     const status = freshness(reading?.sampled_at ?? null, now);
+                    const hasCalibratedLevel = reading?.water_level_m != null;
+                    const levelValue = hasCalibratedLevel
+                      ? reading.water_level_m
+                      : (reading?.water_level_raw ?? null);
                     return (
                       <button
                         className="node-card live-node"
@@ -369,10 +379,16 @@ export function LiveWorkspace() {
                             </strong>
                           </div>
                           <div>
-                            <span>Water level</span>
+                            <span>
+                              {hasCalibratedLevel
+                                ? "Water level"
+                                : "Water level raw"}
+                            </span>
                             <strong>
-                              {reading?.water_level_m ?? "—"}
-                              <small> m</small>
+                              {levelValue ?? "—"}
+                              <small>
+                                {hasCalibratedLevel ? " m" : " counts"}
+                              </small>
                             </strong>
                           </div>
                         </div>
@@ -411,7 +427,8 @@ export function LiveWorkspace() {
                         <div className="prose">
                           <p>
                             Temperature: {reading?.temperature_c ?? "—"} °C ·
-                            water level: {reading?.water_level_m ?? "—"} m
+                            calibrated water level:{" "}
+                            {reading?.water_level_m ?? "—"} m
                           </p>
                           <p>
                             pH: {reading?.ph_value ?? "—"} · TDS:{" "}
@@ -444,18 +461,10 @@ export function LiveWorkspace() {
                         ? "Experimental sensor enabled"
                         : "Not installed"}
                     </p>
-                    <LiveChart
-                      now={now}
+                    <NodeHistory
                       observations={snapshot.history.filter(
                         (r) => r.node_id === activeNode.id,
                       )}
-                    />
-                    <LiveChart
-                      now={now}
-                      observations={snapshot.history.filter(
-                        (r) => r.node_id === activeNode.id,
-                      )}
-                      level
                     />
                   </Panel>
                 )}
@@ -602,64 +611,37 @@ export function LiveWorkspace() {
                 )}
               </>
             )}
-            {tab === "Pump control" && (
-              <Panel title="Pump monitoring" subtitle="Public read-only access">
-                <div className="prose">
-                  <h3>Device-reported state: {gateway.pump_state}</h3>
-                  <p>
-                    Reported {ageLabel(gateway.last_sample_at, now)}. This is
-                    the last known state, not a confirmation of a requested
-                    action.
-                  </p>
-                  <p>
-                    Remote commands are disabled. Physical commissioning,
-                    independent interlocks and a manual override are required
-                    before pump operation.
-                  </p>
-                </div>
-              </Panel>
-            )}
             {tab === "Power" && (
               <>
                 <Panel
                   title="Gateway power"
-                  subtitle={`Last known sample · ${ageLabel(gateway.last_sample_at, now)}`}
-                  action={
-                    <Badge
-                      tone={
-                        freshness(gateway.last_sample_at, now) === "online"
-                          ? "teal"
-                          : "amber"
-                      }
-                    >
-                      {freshness(gateway.last_sample_at, now)}
-                    </Badge>
-                  }
+                  subtitle="Central gateway · sample simulation"
+                  action={<Badge tone="amber">SIMULATED</Badge>}
                 >
                   <div className="power-grid">
                     {[
-                      ["Battery", gateway.battery_percent, "%"],
-                      ["Voltage", gateway.voltage, "V"],
-                      ["Solar input", gateway.solar_watts, "W"],
-                      ["Panel voltage", gateway.solar_voltage, "V"],
+                      [
+                        "Battery",
+                        SIMULATED_GATEWAY_BATTERY_PERCENT,
+                        "%",
+                      ],
+                      ["Battery voltage", SIMULATED_GATEWAY_BATTERY_VOLTAGE, "V"],
+                      ["Solar input", panelVoltage.toFixed(2), "V"],
+                      ["Panel voltage", panelVoltage.toFixed(2), "V"],
                     ].map(([name, value, unit]) => (
                       <div key={String(name)}>
                         <span>{name}</span>
                         <strong>
-                          {value ?? "Unavailable"}{" "}
-                          <small>{value !== null ? unit : ""}</small>
+                          {value} <small>{unit}</small>
                         </strong>
                       </div>
                     ))}
                   </div>
                   <p className="disclaimer">
-                    Charging:{" "}
-                    {gateway.charging === null
-                      ? "Unknown"
-                      : gateway.charging
-                        ? "Yes"
-                        : "No"}
-                    . Monitoring nodes have independent batteries.
+                    Simulated values, not measurements from the ESP32. Solar
+                    and panel voltage share one random value, refreshed every
+                    10 seconds (3.20–6.00 V). Monitoring nodes have independent
+                    batteries.
                   </p>
                 </Panel>
                 <Panel title="Monitoring-node batteries">

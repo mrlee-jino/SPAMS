@@ -34,6 +34,7 @@ function packet() {
 test("validates nullable sensors, optional acoustic data and strips extra fields", () => {
   const input = packet();
   input.nodes[0].temperature_c = null;
+  input.nodes[0].water_level_raw = 1023;
   input.nodes[0].acoustic = {
     echo_us: 1400,
     amplitude: 0.4,
@@ -43,6 +44,7 @@ test("validates nullable sensors, optional acoustic data and strips extra fields
   input.gateway.extra = "ignored";
   const result = parseTelemetry(input, now);
   assert.equal(result.nodes[0].temperature_c, null);
+  assert.equal(result.nodes[0].water_level_raw, 1023);
   assert.equal(result.nodes[0].acoustic.quality, "usable");
   assert.equal("extra" in result.gateway, false);
 });
