@@ -65,6 +65,8 @@ Payload shape (placeholders, not valid provisioned device identifiers):
     "node_id": "<registered node UUID>", "boot_id": "<UUID per node boot>",
     "sequence": 1, "sampled_at": "<ISO UTC timestamp>",
     "temperature_c": 28.4, "water_level_m": 1.24, "battery_percent": 86,
+    "ph_value": 7.2, "tds_ppm": 58.5, "turbidity_voltage": 4.44,
+    "turbidity_ntu": null, "water_level_raw": 1023,
     "sensor_health": "healthy",
     "acoustic": { "echo_us": 1480, "amplitude": 0.42, "valid_returns": 92, "quality": "usable" }
   }]
@@ -72,6 +74,8 @@ Payload shape (placeholders, not valid provisioned device identifiers):
 ```
 
 Temperature, water level and node battery may be null when unavailable. Omit `acoustic` if absent; solar fields must explicitly be null when unavailable. Acoustic data represents experimental raw observations, not a disease diagnosis.
+
+Water-quality values are optional and nullable. Apply the new `202611180001_water_quality_telemetry.sql` migration to store them. `water_level_raw` is an ADC count, not meters; send `water_level_m` only after sensor-specific calibration. A missing or failed sensor should be sent as `null` and reflected in `sensor_health`, not represented as a plausible zero. The website displays the latest pH, TDS, turbidity, and raw ADC values on the live node detail view.
 
 ## Pump safety and audit
 

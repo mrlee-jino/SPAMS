@@ -50,6 +50,13 @@ function record(v: unknown): Record<string, unknown> {
     throw new Error("Invalid object");
   return v as Record<string, unknown>;
 }
+function numeric(v: unknown, min: number, max: number): number;
+function numeric(
+  v: unknown,
+  min: number,
+  max: number,
+  nullable: true,
+): number | null;
 function numeric(
   v: unknown,
   min: number,
@@ -60,6 +67,20 @@ function numeric(
   if (typeof v !== "number" || !Number.isFinite(v) || v < min || v > max)
     throw new Error("Invalid measurement");
   return v;
+}
+function parseAcoustic(v: unknown): AcousticReading {
+  const a = record(v);
+  const echo_us = numeric(a.echo_us, 0, 1000000);
+  const amplitude = numeric(a.amplitude, 0, 1);
+  const valid_returns = numeric(a.valid_returns, 0, 100);
+  if (!Number.isInteger(valid_returns))
+    throw new Error("Invalid acoustic return count");
+  return {
+    echo_us,
+    amplitude,
+    valid_returns,
+    quality: choice(a.quality, ["usable", "noisy", "invalid"] as const),
+  };
 }
 function choice<T extends string>(v: unknown, values: readonly T[]): T {
   if (typeof v !== "string" || !values.includes(v as T))
@@ -154,6 +175,7 @@ export function parseTelemetry(
       "degraded",
       "failed",
     ] as const),
+    ...(n.acoustic === undefined ? {} : { acoustic: parseAcoustic(n.acoustic) }),
   };
 
   if (

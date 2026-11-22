@@ -17,6 +17,7 @@ async function setup(publicAccess = false) {
   for (const file of [
     "202610310001_phase2.sql",
     "202610310002_device_workflows.sql",
+    "202611180001_water_quality_telemetry.sql",
   ])
     await db.exec(
       await readFile(
@@ -149,6 +150,13 @@ test("ingestion is transactional, deduplicated, gateway-scoped and capability ch
   try {
     await sixNodes(db);
     const p = await packet(db);
+    Object.assign(p.nodes[0], {
+      ph_value: 7.2,
+      tds_ppm: 58.5,
+      turbidity_voltage: 4.44,
+      turbidity_ntu: null,
+      water_level_raw: 1023,
+    });
     const result = await db.query("select ingest_telemetry($1,$2) as result", [
       gateway,
       JSON.stringify(p),
@@ -166,6 +174,21 @@ test("ingestion is transactional, deduplicated, gateway-scoped and capability ch
     assert.equal(
       (await db.query("select * from node_telemetry")).rows.length,
       6,
+    );
+    assert.deepEqual(
+      (
+        await db.query(
+          "select ph_value,tds_ppm,turbidity_voltage,turbidity_ntu,water_level_raw from node_telemetry where node_id=$1",
+          [p.nodes[0].node_id],
+        )
+      ).rows[0],
+      {
+        ph_value: "7.2",
+        tds_ppm: "58.5",
+        turbidity_voltage: "4.44",
+        turbidity_ntu: null,
+        water_level_raw: "1023",
+      },
     );
     const bad = await packet(db, 2);
     bad.nodes[0].node_id = crypto.randomUUID();

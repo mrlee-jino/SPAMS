@@ -37,6 +37,11 @@ export interface Observation {
   temperature_c: number | null;
   water_level_m: number | null;
   battery_percent: number | null;
+  ph_value?: number | null;
+  tds_ppm?: number | null;
+  turbidity_voltage?: number | null;
+  turbidity_ntu?: number | null;
+  water_level_raw?: number | null;
   sensor_health: "healthy" | "degraded" | "failed";
 }
 export interface AcousticSample {

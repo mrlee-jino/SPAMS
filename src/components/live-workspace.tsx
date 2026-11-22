@@ -403,26 +403,47 @@ export function LiveWorkspace() {
                     title={`${activeNode.label} details`}
                     subtitle={`${activeNode.position} · node ${activeNode.slot}`}
                   >
-                    <div className="prose">
-                      <p>
-                        Ultrasonic capability:{" "}
-                        {activeNode.ultrasonic_enabled
-                          ? "Experimental sensor enabled"
-                          : "Not installed"}
-                      </p>
-                      <p>
-                        Battery:{" "}
-                        {readings.find((r) => r.node_id === activeNode.id)
-                          ?.battery_percent ?? "Unavailable"}
-                        % · sample timestamp determines freshness.
-                      </p>
-                      <p>
-                        Latest sample received:{" "}
-                        {readings.find((r) => r.node_id === activeNode.id)
-                          ?.received_at ?? "No heartbeat received"}
-                        .
-                      </p>
-                    </div>
+                    {(() => {
+                      const reading = readings.find(
+                        (r) => r.node_id === activeNode.id,
+                      );
+                      return (
+                        <div className="prose">
+                          <p>
+                            Temperature: {reading?.temperature_c ?? "—"} °C ·
+                            water level: {reading?.water_level_m ?? "—"} m
+                          </p>
+                          <p>
+                            pH: {reading?.ph_value ?? "—"} · TDS:{" "}
+                            {reading?.tds_ppm ?? "—"} ppm
+                          </p>
+                          <p>
+                            Turbidity: {reading?.turbidity_voltage ?? "—"} V ·{" "}
+                            {reading?.turbidity_ntu ?? "—"} NTU
+                          </p>
+                          <p>
+                            Raw water-level ADC:{" "}
+                            {reading?.water_level_raw ?? "—"} counts (not
+                            calibrated to meters)
+                          </p>
+                          <p>
+                            Battery: {reading?.battery_percent ?? "Unavailable"}
+                            % · sensor health:{" "}
+                            {reading?.sensor_health ?? "No sensor data"}.
+                          </p>
+                          <p>
+                            Latest sample received:{" "}
+                            {reading?.received_at ?? "No heartbeat received"}.
+                          </p>
+                        </div>
+                      );
+                    })()}
+                    <p className="prose">
+                      Ultrasonic capability:{" "}
+                      {activeNode.ultrasonic_enabled
+                        ? "Experimental sensor enabled"
+                        : "Not installed"}
+                    </p>
                     <LiveChart
                       now={now}
                       observations={snapshot.history.filter(

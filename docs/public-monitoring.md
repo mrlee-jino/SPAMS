@@ -4,10 +4,12 @@
 
 The home page and `/live` now show public database records without sign-in. `/demo` is the separate fixed-data preview. `/login` redirects to the public home page; authentication cookies and session refresh are no longer used.
 
-Apply all four migrations in order in Supabase SQL Editor. If Phase 2's first two migrations are already applied, run only:
+Apply the Phase 2 migrations in order in Supabase SQL Editor. If Phase 2's first two migrations are already applied, run:
 
 1. `202610310003_public_monitoring.sql`
 2. `202610310004_research_jobs.sql`
+
+For water-quality telemetry fields, also apply `202611180001_water_quality_telemetry.sql`.
 
 The public-monitoring migration marks existing/new ponds public by default, as requested. An owner can set `ponds.is_public=false` through SQL Editor to hide a pond and its descendant records. RLS grants anonymous SELECT only for public pond telemetry, device status, forecasts and alerts. It grants no access to memberships, credentials, command requests or audit events. Anonymous writes are denied. The server dashboard uses the publishable key under anonymous RLS, never a service-key read bypass.
 
@@ -31,6 +33,51 @@ Create a separate **simulation** gateway using the public provisioning script wi
 The database derives each telemetry record's source from the registered gateway, not from submitted JSON. The public page prominently labels software-generated records. CSV exports retain the source column, and forecast/alert processing separates simulation and hardware records. Missing sensor or power measurements remain null. A bare USB-powered ESP32 must not invent battery voltage, battery percentage, solar output or charging state.
 
 Device provisioning is done through trusted SQL administration: generate a random token with at least 32 bytes of entropy, store only its SHA-256 hex digest in `device_credentials` with its gateway UUID, and securely place the raw token on that gateway. Do not give the ESP32 the Supabase secret key. This credential is for machine ingestion, not visitor authentication.
+
+## Connect the two-node ESP32 gateway
+
+The public website is already connected to Supabase: its dashboard lists the registered pond, gateway, and nodes. It currently has no telemetry rows, so the node cards and charts correctly show empty data. The ESP32 must send telemetry to the authenticated SPAMS API; do **not** send it directly to the Supabase `/rest/v1/` URL or put a Supabase key in firmware.
+
+1. **Check the server configuration.** In Vercel project settings, set `NEXT_PUBLIC_SUPABASE_URL` to `https://ehywonnrovbbowevfjsz.supabase.co`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` to the project's publishable key, and `SUPABASE_SECRET_KEY` to the project's server-side secret key. The secret key is only for the server; never use it in the ESP32 sketch or browser. Redeploy after changing variables. The public website's current database records confirm that its public URL/key are already working, but device ingestion also needs `SUPABASE_SECRET_KEY`.
+
+2. **Apply the telemetry migration.** In the Supabase SQL Editor, run `supabase/migrations/202611180001_water_quality_telemetry.sql` if it has not already been applied. This adds the pH, TDS, turbidity, and raw water-level columns used by this firmware. The column additions are safe to rerun if one or more already exist.
+
+3. **Generate a private device token locally.** In a private PowerShell terminal with Node.js installed, run:
+
+   ```powershell
+   node --input-type=module -e "import { randomBytes, createHash } from 'node:crypto'; const token = randomBytes(32).toString('hex'); console.log('DEVICE_TOKEN=' + token); console.log('TOKEN_HASH=' + createHash('sha256').update(token).digest('hex'))"
+   ```
+
+   Keep the printed `DEVICE_TOKEN` private and copy it only into the gateway sketch. Copy only `TOKEN_HASH` into this SQL statement in the Supabase SQL Editor:
+
+   ```sql
+   insert into public.device_credentials (gateway_id, token_hash)
+   values (
+     'a108c87f-76be-46e9-82f4-c0aaa9000306',
+     '<paste the 64-character TOKEN_HASH here>'
+   );
+   ```
+
+   The gateway UUID above is the registered **Central gateway 01**. Run the insert once per token. Never paste the raw token into SQL, chat, source control, or Vercel.
+
+4. **Configure and flash the firmware.** In [the supplied ESP32 code bundle](../SPAMS_All_CopyPaste_Codes%20%282%29.md), set the Wi-Fi SSID/password and `DEVICE_TOKEN`. Its node UUIDs are already set to the two registered live nodes. Keep `API_URL` pointed at `https://spams-tawny.vercel.app/api/device/telemetry`; the Supabase REST URL is not the firmware endpoint. Flash the gateway, then open Arduino IDE Serial Monitor at 115200 baud. This prototype reports temperature, TDS, turbidity voltage, pH only after calibration, and raw water-level ADC. It deliberately sends `water_level_m` and `turbidity_ntu` as null until calibrated.
+
+5. **Confirm ingestion.** After a new sample reaches the gateway, Serial Monitor should show `Cloud HTTP 201` and an accepted response with `"source":"hardware"`. An identical retry can return HTTP 200 as a duplicate. Then run this read-only query in Supabase SQL Editor:
+
+   ```sql
+   select n.label, t.sampled_at, t.temperature_c, t.water_level_m,
+          t.ph_value, t.tds_ppm, t.turbidity_voltage, t.water_level_raw,
+          t.sensor_health, t.received_at
+   from public.node_telemetry t
+   join public.nodes n on n.id = t.node_id
+   where n.gateway_id = 'a108c87f-76be-46e9-82f4-c0aaa9000306'
+   order by t.received_at desc
+   limit 10;
+   ```
+
+6. **Verify the website.** Refresh `https://spams-tawny.vercel.app/`. The public workspace polls every 30 seconds and also refreshes on database Realtime events. Open each node card for pH, TDS, turbidity, and raw ADC details; those values are not shown as calibrated measurements unless calibration data is available.
+
+If the ESP32 receives HTTP 401, verify the token was inserted as its SHA-256 hash and that it is copied correctly into the sketch. HTTP 503 usually means `SUPABASE_SECRET_KEY` is missing from Vercel or the deployment needs redeploying. HTTP 422 means to check node UUID assignment, the latest migration, timestamps, and sensor value ranges. For a negative status such as `-1`, no HTTP response reached the sketch. The current Vercel certificate is issued by Google Trust Services (`WR1`); the supplied sketch trusts its GTS Root R1 CA as well as the existing roots. If the TLS diagnostic reports X509 verification failure, make sure this updated certificate block is in the sketch and re-upload it. The sketch also prints its local IP, DNS result, HTTPClient error string, and TLS library detail: check that it receives a non-`0.0.0.0` IP, resolves `spams-tawny.vercel.app`, has internet access (no captive portal/firewall), and has the current system time before HTTPS. Do not turn off certificate verification with `setInsecure()`. Share only diagnostic lines if asking for help—never share the device token or secret key. If a device token was pasted into a shared editor/chat, revoke its credential row and issue a new token before continuing.
 
 ## Gateway simulator
 
