@@ -32,6 +32,10 @@ const tabs = [
   "Settings",
 ] as const;
 type Tab = (typeof tabs)[number];
+const expectedAcousticProfile = [
+  { slot: 1, echoUs: 1480, amplitude: 0.4, validReturns: 90 },
+  { slot: 2, echoUs: 1492, amplitude: 0.4, validReturns: 90 },
+] as const;
 export function LiveWorkspace() {
   const [tab, setTab] = useState<Tab>("Overview");
   const panelVoltage = useSimulatedPanelVoltage();
@@ -128,6 +132,10 @@ export function LiveWorkspace() {
   const gateway = snapshot?.gateway;
   const activeNode = snapshot?.nodes.find((n) => n.id === nodeId);
   const readings = useMemo(() => snapshot?.latest ?? [], [snapshot]);
+  const nodeOne = snapshot?.nodes.find((n) => n.slot === 1);
+  const nodeOneSample = readings.find((r) => r.node_id === nodeOne?.id);
+  const showExpectedAcousticProfile =
+    freshness(nodeOneSample?.sampled_at ?? null, now) === "online";
   const valid = readings.filter(
     (t) =>
       freshness(t.sampled_at, now) === "online" &&
@@ -607,6 +615,47 @@ export function LiveWorkspace() {
                 {!snapshot.nodes.some((n) => n.ultrasonic_enabled) && (
                   <p className="empty">
                     No ultrasonic-enabled nodes are registered.
+                  </p>
+                )}
+                {showExpectedAcousticProfile && (
+                  <Panel
+                    title="Expected two-node reference profile"
+                    subtitle="Illustrative study reference · available only while real Node 1 is fresh"
+                  >
+                    <p className="disclaimer">
+                      These expected values are not sensor readings and are
+                      shown separately from observed telemetry.
+                    </p>
+                    <div className="nodes-grid">
+                      {expectedAcousticProfile.map((profile) => {
+                        const node = snapshot.nodes.find(
+                          (candidate) => candidate.slot === profile.slot,
+                        );
+                        return (
+                          <Panel
+                            key={profile.slot}
+                            title={node?.label ?? `Node ${profile.slot}`}
+                            subtitle="Expected reference values"
+                          >
+                            <div className="prose">
+                              <p>Echo time: {profile.echoUs} µs</p>
+                              <p>
+                                Amplitude: {profile.amplitude.toFixed(2)} a.u.
+                              </p>
+                              <p>
+                                Valid returns: {profile.validReturns}/100
+                              </p>
+                            </div>
+                          </Panel>
+                        );
+                      })}
+                    </div>
+                  </Panel>
+                )}
+                {!showExpectedAcousticProfile && (
+                  <p className="empty">
+                    The expected two-node reference profile is hidden until
+                    real Node 1 telemetry is fresh.
                   </p>
                 )}
               </>
