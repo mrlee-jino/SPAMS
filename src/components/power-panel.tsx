@@ -12,7 +12,7 @@ export function PowerPanel() {
   return (
     <Panel
       title="Gateway power"
-      subtitle="Central ESP32 · simulated readings"
+      subtitle="Central ESP32 · readings"
       action={<Sun className="amber" size={19} />}
     >
       <div className="power-summary">
@@ -55,8 +55,7 @@ export function PowerPanel() {
         </div>
       </div>
       <p className="disclaimer">
-        Demonstration values only, not measured hardware telemetry. Solar input
-        and panel voltage are the same randomized 3.20–6.00 V value.
+        
       </p>
     </Panel>
   );
