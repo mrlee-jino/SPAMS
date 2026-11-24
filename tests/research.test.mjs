@@ -5,7 +5,7 @@ import { collectPages, csvCell } from "../src/lib/pagination.ts";
 const now = Date.parse("2026-11-01T12:00:00Z");
 function observations(hours = 12) {
   return Array.from({ length: hours }, (_, h) =>
-    Array.from({ length: 4 }, (_, n) => ({
+    Array.from({ length: 2 }, (_, n) => ({
       id: `${h}-${n}`,
       node_id: String(n),
       sampled_at: new Date(now - (hours - h) * 3600000).toISOString(),
@@ -23,7 +23,7 @@ test("OLS uses six consecutive completed hours, reports coverage and compares ch
   assert(result);
   assert.equal(result.target_at, "2026-11-01T13:00:00.000Z");
   assert(Math.abs(result.predicted_temperature_c - 26.2) < 1e-9);
-  assert.equal(result.valid_nodes, 4);
+  assert.equal(result.valid_nodes, 2);
   assert.equal(result.evaluation.samples, 6);
   assert(result.evaluation.model.mae < 1e-9);
   assert(Math.abs(result.evaluation.persistence.mae - 0.1) < 1e-9);
@@ -31,7 +31,7 @@ test("OLS uses six consecutive completed hours, reports coverage and compares ch
 test("forecast rejects missing hours or insufficient valid temperature nodes and ignores incomplete current hour", () => {
   assert.equal(
     researchForecast(
-      observations().filter((o) => o.node_id !== "3"),
+      observations().filter((o) => o.node_id !== "1"),
       now,
     ),
     null,
@@ -42,7 +42,7 @@ test("forecast rejects missing hours or insufficient valid temperature nodes and
   assert.equal(researchForecast(data, now), null);
   const nulls = observations().map((o) => ({
     ...o,
-    temperature_c: o.node_id === "3" ? null : o.temperature_c,
+    temperature_c: o.node_id === "1" ? null : o.temperature_c,
   }));
   assert.equal(researchForecast(nulls, now), null);
   const current = observations();

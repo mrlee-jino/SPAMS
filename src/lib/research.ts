@@ -13,6 +13,7 @@ export interface ResearchAlert {
   severity: "info" | "warning" | "critical";
 }
 export function researchForecast(observations: Observation[], now: number) {
+  const minimumTemperatureNodes = 2;
   const end = Math.floor(now / 3600000) * 3600000;
   const hours = hourlyMeans(
     observations.filter((o) => Date.parse(o.sampled_at) < end),
@@ -21,7 +22,14 @@ export function researchForecast(observations: Observation[], now: number) {
   const window = Array.from({ length: 6 }, (_, i) =>
     byHour.get(end - (6 - i) * 3600000),
   );
-  if (window.some((p) => !p || p.temperature === null || p.coverage < 4))
+  if (
+    window.some(
+      (p) =>
+        !p ||
+        p.temperature === null ||
+        p.coverage < minimumTemperatureNodes,
+    )
+  )
     return null;
   const points = window.map((p) => ({
     time: p!.at,
@@ -32,11 +40,22 @@ export function researchForecast(observations: Observation[], now: number) {
     baselineErrors: number[] = [];
   for (const hour of hours) {
     const at = Date.parse(hour.at);
-    if (hour.temperature === null || hour.coverage < 4) continue;
+    if (
+      hour.temperature === null ||
+      hour.coverage < minimumTemperatureNodes
+    )
+      continue;
     const training = Array.from({ length: 6 }, (_, i) =>
       byHour.get(at - (6 - i) * 3600000),
     );
-    if (training.some((p) => !p || p.temperature === null || p.coverage < 4))
+    if (
+      training.some(
+        (p) =>
+          !p ||
+          p.temperature === null ||
+          p.coverage < minimumTemperatureNodes,
+      )
+    )
       continue;
     const inputs = training.map((p) => ({
       time: p!.at,

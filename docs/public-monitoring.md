@@ -97,7 +97,7 @@ On a proxy-restricted cloud runtime, preserve the configured proxy. With Node 24
 
 The processor reads the previous 24 hours using 1,000-row ID-cursor pages, with a 100,000-row processing budget per pond. Exceeding the budget returns a failure rather than publishing a forecast from truncated data. Each pond/source publication is atomic and idempotent; if a multi-pond run fails later, completed pond results remain valid.
 
-The OLS baseline requires the last six consecutive **completed** UTC hours, each with at least four healthy temperature-reporting nodes. It averages samples per node first, then averages nodes equally. Missing hours and temperature coverage are never invented. The forecast describes the mean during the following hour; `target_at` is that hour's end. Run at the top of the hour for a one-hour horizon. Persisted records retain source, coverage, training window, target and model version.
+The OLS baseline requires the last six consecutive **completed** UTC hours, each with at least two healthy temperature-reporting nodes. It averages samples per node first, then averages nodes equally. Missing hours and temperature coverage are never invented. The forecast describes the mean during the following hour; `target_at` is that hour's end. Run at the top of the hour for a one-hour horizon. Persisted records retain source, coverage, training window, target and model version.
 
 Rolling chronological holdouts report model MAE/RMSE and compare with persistence where enough history exists. These are descriptive scores on available data, not an independent field-validation result. There is no fabricated accuracy percentage or confidence interval.
 

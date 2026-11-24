@@ -587,7 +587,7 @@ export function LiveWorkspace() {
                 ) : (
                   <p className="empty">
                     No eligible forecast is stored yet. The processor needs six
-                    consecutive completed hours with at least four healthy
+                    consecutive completed hours with at least two healthy
                     temperature nodes per hour.
                   </p>
                 )}
